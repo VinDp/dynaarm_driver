@@ -45,7 +45,7 @@
 #include <pinocchio/parsers/urdf.hpp>
 
 // Project
-#include <dynaarm_controllers/gravity_compensation_controller_parameters.hpp>
+#include <gravity_compensation_controller_parameters.hpp>
 #include <dynaarm_controllers/interface_utils.hpp>
 
 namespace dynaarm_controllers

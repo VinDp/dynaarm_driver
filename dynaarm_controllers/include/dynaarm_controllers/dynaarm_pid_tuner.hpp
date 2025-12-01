@@ -39,7 +39,7 @@
 #include <rclcpp_lifecycle/state.hpp>
 #include <rclcpp/logging.hpp>
 /*Project*/
-#include <dynaarm_controllers/dynaarm_pid_tuner_parameters.hpp>
+#include <dynaarm_pid_tuner_parameters.hpp>
 #include <dynaarm_controllers/interface_utils.hpp>
 
 /*msgs*/

@@ -57,7 +57,7 @@
 #include <geometry_msgs/msg/pose_stamped.hpp>
 
 // Project
-#include <dynaarm_controllers/cartesian_pose_controller_parameters.hpp>
+#include <cartesian_pose_controller_parameters.hpp>
 #include <dynaarm_controllers/interface_utils.hpp>
 
 namespace dynaarm_controllers

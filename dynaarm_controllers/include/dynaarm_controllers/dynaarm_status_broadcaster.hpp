@@ -40,7 +40,7 @@
 #include <rclcpp/logging.hpp>
 
 /*Project*/
-#include <dynaarm_controllers/dynaarm_status_broadcaster_parameters.hpp>
+#include <dynaarm_status_broadcaster_parameters.hpp>
 #include <dynaarm_controllers/interface_utils.hpp>
 
 /*msgs*/

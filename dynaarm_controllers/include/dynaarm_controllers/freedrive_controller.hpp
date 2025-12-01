@@ -38,7 +38,7 @@
 #include <rclcpp/logging.hpp>
 
 /*project*/
-#include <dynaarm_controllers/freedrive_controller_parameters.hpp>
+#include <freedrive_controller_parameters.hpp>
 #include <dynaarm_controllers/interface_utils.hpp>
 
 namespace dynaarm_controllers
