@@ -136,19 +136,19 @@ class DuaticRobotsHelper:
 
         # Pattern 2: hip_pitch, hip_roll
         elif "hip" in joint_name:
-            return "robot_0", "hip_0", "hip"
+            return "robot_0", "hip", "hip"
 
         # Pattern 3: joint_wheel1, joint_wheel2, joint_wheel3, joint_wheel4
         elif joint_name.startswith("joint_wheel"):
-            return "robot_0", "platform_0", "platform"
+            return "robot_0", "platform", "platform"
 
         # Pattern 4: head_pan, head_tilt
         elif joint_name.startswith("head_"):
-            return "robot_0", "head_0", "head"
+            return "robot_0", "head", "head"
 
         # Pattern 5: finger or gripper joints (e.g., zimmer_finger_left, gripper_joint)
         elif any(keyword in joint_name for keyword in self._end_effector_keywords):
-            return "robot_0", "end_effector_0", "end_effector"
+            return "robot_0", "end_effector", "end_effector"
 
         # Default: treat as miscellaneous component
         return "robot_0", "", "arm"

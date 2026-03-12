@@ -143,6 +143,12 @@ class DuaticControllerHelper:
             if base in matching_names:
                 # controllers is a list of dicts like [{name: state}]
                 filtered.extend([list(ctrl.keys())[0] for ctrl in controllers])
+            else:
+                # Fallback: Check if any of the matching_names is an exact controller name
+                for ctrl_dict in controllers:
+                    ctrl_name = list(ctrl_dict.keys())[0]
+                    if ctrl_name in matching_names:
+                        filtered.append(ctrl_name)
         return filtered
 
     def get_active_controllers(self):
