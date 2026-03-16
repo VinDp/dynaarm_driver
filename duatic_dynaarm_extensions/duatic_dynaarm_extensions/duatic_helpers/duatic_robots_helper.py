@@ -26,6 +26,7 @@ from rclpy.node import Node
 
 from sensor_msgs.msg import JointState
 from controller_manager_msgs.srv import ListHardwareComponents
+from duatic_dynaarm_extensions.duatic_helpers.duatic_param_helper import DuaticParamHelper
 
 
 class DuaticRobotsHelper:
@@ -54,6 +55,43 @@ class DuaticRobotsHelper:
         self.hardware_components_client = self.node.create_client(
             ListHardwareComponents, "controller_manager/list_hardware_components"
         )
+
+        self.param_helper = DuaticParamHelper(self.node)
+        self.component_type_indicators = {
+            "arm": ["shoulder", "elbow", "forearm", "wrist"],
+            "hip": ["hip"],
+            "platform": ["wheel"],
+            "head": ["head"],
+            "end_effector": list(self._end_effector_keywords),
+        }
+
+        self.robot_structure = "unknown"
+        self._initialize_from_urdf()
+
+    def _initialize_from_urdf(self):
+        """Try to identify robot structure from URDF."""
+        urdf_raw = self.param_helper.get_urdf()
+        if urdf_raw:
+            urdf = urdf_raw.lower()
+            # Priority based identification to avoid mis-detecting rovers with arm metadata
+            # Morphology-based identification
+            if "wheel" in urdf and "hip" in urdf:
+                self.robot_structure = "mobile_manipulator"
+                self.node.get_logger().info(
+                    "Identified robot structure: Mobile Manipulator (Base + Torso)"
+                )
+            elif "hip" in urdf:
+                self.robot_structure = "multi_arm"
+                self.node.get_logger().info("Identified robot structure: Multi-Arm (Torso)")
+            elif "wheel" in urdf:
+                self.robot_structure = "mobile_base"
+                self.node.get_logger().info("Identified robot structure: Mobile Base")
+            elif "shoulder" in urdf or "elbow" in urdf:
+                self.robot_structure = "single_arm"
+                self.node.get_logger().info("Identified robot structure: Single-Arm")
+            else:
+                self.robot_structure = "generic"
+                self.node.get_logger().info("Identified robot structure: Generic")
 
     def _joint_sate_callback(self, msg):
         """Callback to update joint states and detect robots."""
@@ -129,26 +167,23 @@ class DuaticRobotsHelper:
         # Handle different joint naming patterns
 
         # Pattern 1: arm_left/shoulder_rotation, arm_right/elbow_flexion
-        if "/" in joint_name and ("arm_" in joint_name or "hand_" in joint_name):
+        if "/" in joint_name:
             prefix, joint_suffix = joint_name.split("/", 1)
-            if prefix.startswith("arm_"):
+            if prefix.startswith("arm_") or prefix.startswith("hand_"):
                 return "robot_0", prefix, "arm"
 
-        # Pattern 2: hip_pitch, hip_roll
-        elif "hip" in joint_name:
-            return "robot_0", "hip", "hip"
+            # Check if suffix matches any component indicator
+            for comp_type, indicators in self.component_type_indicators.items():
+                if any(indicator in joint_suffix for indicator in indicators):
+                    return "robot_0", prefix, comp_type
 
-        # Pattern 3: joint_wheel1, joint_wheel2, joint_wheel3, joint_wheel4
-        elif joint_name.startswith("joint_wheel"):
-            return "robot_0", "platform", "platform"
-
-        # Pattern 4: head_pan, head_tilt
-        elif joint_name.startswith("head_"):
-            return "robot_0", "head", "head"
-
-        # Pattern 5: finger or gripper joints (e.g., zimmer_finger_left, gripper_joint)
-        elif any(keyword in joint_name for keyword in self._end_effector_keywords):
-            return "robot_0", "end_effector", "end_effector"
+        # Pattern 2: Heuristic based on joint name keywords (Single Arm or other flat structures)
+        for comp_type, indicators in self.component_type_indicators.items():
+            if any(indicator in joint_name for indicator in indicators):
+                # For flat structures, we return "" as component name if it's an arm
+                # to match '/joint_trajectory_controller/joint_trajectory'
+                comp_name = "" if comp_type == "arm" else comp_type
+                return "robot_0", comp_name, comp_type
 
         # Default: treat as miscellaneous component
         return "robot_0", "misc", "misc"

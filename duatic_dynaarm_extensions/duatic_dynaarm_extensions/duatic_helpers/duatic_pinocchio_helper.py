@@ -36,9 +36,9 @@ from ament_index_python import get_package_share_directory
 class DuaticPinocchioHelper:
     """A simple class to retrieve the robot URDF from the parameter server."""
 
-    def __init__(self, node, robot_type="DynaArm", joint_margins=0.2):
+    def __init__(self, node, robot_id="robot", joint_margins=0.2):
         self.node = node
-        self.robot_type = robot_type
+        self.robot_id = robot_id
         self.param_helper = DuaticParamHelper(self.node)
 
         self.model = self.get_pin_model_data()
@@ -198,41 +198,30 @@ class DuaticPinocchioHelper:
             return urdf_file.name
 
     def get_dynaarm_urdf(self):
-
+        """Fallback method to get default DynaArm URDF if parameter server fails."""
         package_share_desc_name = "dynaarm_single_example_description"
         urdf_name = "dynaarm_single_example.urdf.xacro"
 
-        if self.robot_type == "Alpha":
-            # Use the default URDF for the whole robot
-            package_share_desc_name = "alpha_example_description"
-            urdf_name = "alpha_example.urdf.xacro"
-
         # Load the robot description
-        pkg_share_description = get_package_share_directory(package_share_desc_name)
-        xacro_path = os.path.join(pkg_share_description, "urdf", urdf_name)
-        urdf_xml = xacro.process_file(xacro_path).toxml()
+        try:
+            pkg_share_description = get_package_share_directory(package_share_desc_name)
+            xacro_path = os.path.join(pkg_share_description, "urdf", urdf_name)
+            urdf_xml = xacro.process_file(xacro_path).toxml()
 
-        # Write URDF to a temporary file
-        with tempfile.NamedTemporaryFile(delete=False, suffix=".urdf") as urdf_file:
-            urdf_file.write(urdf_xml.encode())
-            urdf_file_path = urdf_file.name
-            return urdf_file_path
+            # Write URDF to a temporary file
+            with tempfile.NamedTemporaryFile(delete=False, suffix=".urdf") as urdf_file:
+                urdf_file.write(urdf_xml.encode())
+                urdf_file_path = urdf_file.name
+                return urdf_file_path
+        except Exception as e:
+            self.node.get_logger().error(
+                f"Failed to load fallback URDF from {package_share_desc_name}: {e}"
+            )
+            return None
 
     def get_robot_urdf_from_param(self):
         """Retrieve the robot URDF from the parameter server."""
-        try:
-            urdf_values = self.param_helper.get_param_values(
-                "robot_state_publisher", "robot_description"
-            )
-            if urdf_values and urdf_values[0].string_value:
-                self.node.get_logger().info("Successfully loaded URDF from parameter server")
-                return urdf_values[0].string_value
-            else:
-                self.node.get_logger().warn("URDF parameter exists but is empty")
-                return None
-        except Exception as e:
-            self.node.get_logger().warn(f"Failed to get URDF from parameter server: {e}")
-            return None
+        return self.param_helper.get_urdf("robot_state_publisher", "robot_description")
 
     def get_joint_values_by_names(self, q, joint_names):
         """Extract specific joint values from q array by joint names."""

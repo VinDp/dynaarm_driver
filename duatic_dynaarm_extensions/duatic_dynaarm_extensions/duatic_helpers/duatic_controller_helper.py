@@ -42,6 +42,7 @@ class DuaticControllerHelper:
             "joint_trajectory_controller",
             "cartesian_pose_controller",
             "mecanum_drive_controller",
+            "freeze_controller",
         ]
 
         self.active_low_level_controllers = []
@@ -281,15 +282,30 @@ class DuaticControllerHelper:
                     # Replace the old dictionary with the new one
                     self._found_controllers_by_base = new_found_controllers
 
-                    # Handle freeze controller separately
-                    freeze_active = False
-                    for controller_name, state in current_controllers.items():
-                        if controller_name.startswith("freeze_controller"):
-                            if state == "active":
-                                freeze_active = True
-                            break
+                    # Handle freeze controller separately (E-Stop)
+                    # User rule: If only one freeze controller exists, it's the global one.
+                    # If multiple exist, we prioritize 'freeze_controller'.
+                    freeze_ctrls = {
+                        name: state
+                        for name, state in current_controllers.items()
+                        if name.startswith("freeze_controller")
+                    }
 
-                    self._is_freeze_active = freeze_active
+                    if len(freeze_ctrls) == 1:
+                        # Single freeze controller -> Global E-Stop
+                        self._is_freeze_active = list(freeze_ctrls.values())[0] == "active"
+                    elif len(freeze_ctrls) > 1:
+                        # Multiple freeze controllers -> Prioritize exact name
+                        if "freeze_controller" in freeze_ctrls:
+                            self._is_freeze_active = freeze_ctrls["freeze_controller"] == "active"
+                        else:
+                            # Fallback to the first one found if no exact match
+                            self.node.get_logger().debug(
+                                f"Multiple freeze controllers found {list(freeze_ctrls.keys())}, but no exact 'freeze_controller'. Using first one for E-Stop."
+                            )
+                            self._is_freeze_active = list(freeze_ctrls.values())[0] == "active"
+                    else:
+                        self._is_freeze_active = False
 
                     # Log controller changes (optional)
                     if self._run_once:
