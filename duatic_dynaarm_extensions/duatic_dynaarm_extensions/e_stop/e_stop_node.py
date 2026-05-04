@@ -84,11 +84,11 @@ class EmergencyStopNode(Node):
             self.get_logger().warning("Waiting for gamepad to connect.", throttle_duration_sec=15)
 
         # Gamepad disconnects, but allow a grace period before assuming disconnection
-        if self.gamepad_connected and (now - self.last_joy_received_time) > Duration(seconds=1.0):
-            if (now - self.last_toggle_time).nanoseconds / 10**9 >= 2:
-                self.get_logger().warn("Gamepad disconnected! Activating freeze_controller.")
-                self.set_freeze_controller(True)
-                self.gamepad_connected = False
+        # if self.gamepad_connected and (now - self.last_joy_received_time) > Duration(seconds=20.0):
+        #     if (now - self.last_toggle_time).nanoseconds / 10**9 >= 2:
+        #         self.get_logger().warn("Gamepad disconnected! Activating freeze_controller.")
+        #         self.set_freeze_controller(True)
+        #         self.gamepad_connected = False
 
         # Handle emergency stop activation
         if self.e_stop_pressed_state and self.e_stop_button_release:
