@@ -10,9 +10,9 @@ max_current: 25.0
 
 max_freeze_current: 10.0
 
-max_motor_velocity: 300.0 # 50
+max_motor_velocity: 50
 
-max_joint_torque: 60.0 # 45
+max_joint_torque: 45
 
 current_integrator_saturation: 15.0
 
